@@ -896,7 +896,7 @@ For "${ticker}" specifically:
 - If ticker is ambiguous (e.g. NOKIA.HE, NOK, NOKIA), use Nokia Corporation (NOK/NOKIA.HE, Finnish telecom/network equipment company)
 - If completely unrecognized, still return valid JSON with best-effort estimates and note uncertainty in analystComment`;
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const response = await fetch('/api/proxy', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
