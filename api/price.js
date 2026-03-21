@@ -1,4 +1,4 @@
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -7,10 +7,9 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   const { ticker } = req.query;
-  if (!ticker) return res.status(400).json({ error: 'Missing ticker parameter' });
+  if (!ticker) return res.status(400).json({ error: 'Missing ticker' });
 
   try {
-    // Yahoo Finance v8 quote endpoint — no API key needed
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=1d`;
     const response = await fetch(url, {
       headers: {
@@ -19,22 +18,17 @@ export default async function handler(req, res) {
       }
     });
 
-    if (!response.ok) {
-      return res.status(404).json({ error: `Ticker not found: ${ticker}` });
-    }
+    if (!response.ok) return res.status(404).json({ error: `Ticker not found: ${ticker}` });
 
     const data = await response.json();
     const result = data?.chart?.result?.[0];
-
-    if (!result) {
-      return res.status(404).json({ error: `No data for ticker: ${ticker}` });
-    }
+    if (!result) return res.status(404).json({ error: `No data for: ${ticker}` });
 
     const meta = result.meta;
     const price         = meta.regularMarketPrice ?? meta.previousClose ?? null;
     const previousClose = meta.previousClose ?? null;
     const currency      = meta.currency ?? 'USD';
-    const exchange      = meta.exchangeName ?? meta.fullExchangeName ?? '';
+    const exchange      = meta.fullExchangeName ?? meta.exchangeName ?? '';
     const longName      = meta.longName ?? meta.shortName ?? ticker;
     const change        = price && previousClose ? price - previousClose : null;
     const changePct     = change && previousClose ? (change / previousClose) * 100 : null;
@@ -49,10 +43,9 @@ export default async function handler(req, res) {
       changePct,
       currency,
       exchange,
-      marketCap: marketCap ? marketCap / 1e9 : null, // convert to billions
+      marketCap: marketCap ? marketCap / 1e9 : null,
     });
-
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
-}
+};
